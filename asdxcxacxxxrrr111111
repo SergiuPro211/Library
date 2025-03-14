@@ -1795,7 +1795,6 @@ function OrionLib:Destroy()
 end
 function OrionLib:AddConfigurationSystem(Parent)
     local Container
-    
     if type(Parent) == "table" then
         if Parent.AddSection then
             Container = Parent:AddSection({Name = "Configurations"})
@@ -1803,12 +1802,10 @@ function OrionLib:AddConfigurationSystem(Parent)
             Container = Parent
         end
     else
-        error("Invalid parent for configuration system")
+        warn("Invalid parent for configs.")
         return
     end
-    
     local SelectedConfig = ""
-    
     local function RefreshConfigs()
         local ConfigList = {}
         pcall(function()
@@ -1825,9 +1822,7 @@ function OrionLib:AddConfigurationSystem(Parent)
         end)
         return ConfigList
     end
-    
     Container:AddLabel("Enter a name and create or select an existing config")
-    
     Container:AddTextbox({
         Name = "Config Name",
         Default = "",
@@ -1836,7 +1831,6 @@ function OrionLib:AddConfigurationSystem(Parent)
             SelectedConfig = Text
         end
     })
-    
     local ConfigDropdown = Container:AddDropdown({
         Name = "Saved Configs",
         Default = "",
@@ -1846,7 +1840,6 @@ function OrionLib:AddConfigurationSystem(Parent)
             SelectedConfig = Selected
         end
     })
-    
     Container:AddButton({
         Name = "Create Config",
         Callback = function()
@@ -1864,7 +1857,7 @@ function OrionLib:AddConfigurationSystem(Parent)
                 writefile(OrionLib.Folder .. "/" .. SelectedConfig .. ".txt", tostring(HttpService:JSONEncode(Data)))
                 OrionLib:MakeNotification({
                     Name = "Configuration",
-                    Content = "Created configuration: " .. SelectedConfig,
+                    Content = "Created config: " .. SelectedConfig,
                     Time = 5
                 })
                 ConfigDropdown:Refresh(RefreshConfigs(), true)
@@ -1877,7 +1870,6 @@ function OrionLib:AddConfigurationSystem(Parent)
             end
         end
     })
-    
     Container:AddButton({
         Name = "Save/Overwrite Config",
         Callback = function()
@@ -1892,24 +1884,22 @@ function OrionLib:AddConfigurationSystem(Parent)
                         end
                     end    
                 end
-                
                 writefile(OrionLib.Folder .. "/" .. SelectedConfig .. ".txt", tostring(HttpService:JSONEncode(Data)))
                 OrionLib:MakeNotification({
-                    Name = "Configuration",
-                    Content = "Saved configuration: " .. SelectedConfig,
+                    Name = "Configs",
+                    Content = "Saved config: " .. SelectedConfig,
                     Time = 5
                 })
                 ConfigDropdown:Refresh(RefreshConfigs(), true)
             else
                 OrionLib:MakeNotification({
-                    Name = "Configuration",
+                    Name = "Configs",
                     Content = "Please enter a config name!",
                     Time = 5
                 })
             end
         end
     })
-    
     Container:AddButton({
         Name = "Load Selected Config",
         Callback = function()
@@ -1921,25 +1911,23 @@ function OrionLib:AddConfigurationSystem(Parent)
                 })
                 return
             end
-            
             if isfile(OrionLib.Folder .. "/" .. SelectedConfig .. ".txt") then
                 local Success, Result = pcall(function()
                     return readfile(OrionLib.Folder .. "/" .. SelectedConfig .. ".txt")
                 end)
-                
                 if Success then
                     pcall(function()
                         LoadCfg(Result)
                         OrionLib:MakeNotification({
                             Name = "Configuration",
-                            Content = "Loaded configuration: " .. SelectedConfig,
+                            Content = "Loaded config: " .. SelectedConfig,
                             Time = 5
                         })
                     end)
                 else
                     OrionLib:MakeNotification({
                         Name = "Configuration",
-                        Content = "Failed to load configuration!",
+                        Content = "Failed to load config!",
                         Time = 5
                     })
                 end
@@ -1952,7 +1940,6 @@ function OrionLib:AddConfigurationSystem(Parent)
             end
         end
     })
-    
     Container:AddButton({
         Name = "Delete Selected Config",
         Callback = function()
@@ -1964,7 +1951,6 @@ function OrionLib:AddConfigurationSystem(Parent)
                 })
                 return
             end
-            
             if isfile(OrionLib.Folder .. "/" .. SelectedConfig .. ".txt") then
                 pcall(function()
                     delfile(OrionLib.Folder .. "/" .. SelectedConfig .. ".txt")
@@ -1972,7 +1958,7 @@ function OrionLib:AddConfigurationSystem(Parent)
                 ConfigDropdown:Refresh(RefreshConfigs(), true)
                 OrionLib:MakeNotification({
                     Name = "Configuration",
-                    Content = "Deleted configuration: " .. SelectedConfig,
+                    Content = "Deleted config: " .. SelectedConfig,
                     Time = 5
                 })
                 SelectedConfig = ""
@@ -1985,7 +1971,6 @@ function OrionLib:AddConfigurationSystem(Parent)
             end
         end
     })
-    
     Container:AddButton({
         Name = "Refresh Config List",
         Callback = function()
