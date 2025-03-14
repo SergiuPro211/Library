@@ -1794,34 +1794,44 @@ function OrionLib:Destroy()
 	Orion:Destroy()
 end
 function OrionLib:AddConfigurationSystem(Parent)
-    -- Check if Parent is a section or tab and get appropriate container
-    local Container = Parent
-    if Parent.Container then -- It's a tab
+    -- Get the appropriate container based on what type of parent was passed
+    local Container
+    
+    -- Check if Parent is a tab by testing if it has MakeTab method
+    if type(Parent) == "table" and Parent.AddSection then
+        -- It's a tab, so create a section
         Container = Parent:AddSection({Name = "Configurations"})
+    else
+        -- It's already a section or other container
+        Container = Parent
     end
     
     -- Create variables to store config state
     local SelectedConfig = ""
-    local ConfigList = {}
     
     -- Function to refresh the configs list
     local function RefreshConfigs()
-        ConfigList = {}
-        local Files = listfiles(OrionLib.Folder)
-        for _, File in pairs(Files) do
-            if File:sub(-4) == ".txt" then
-                local FileName = File:gsub(OrionLib.Folder .. "\\", "")
-                FileName = FileName:gsub(".txt", "")
-                if FileName ~= tostring(game.GameId) then -- Skip auto-save file
-                    table.insert(ConfigList, FileName)
+        local ConfigList = {}
+        pcall(function()
+            local Files = listfiles(OrionLib.Folder)
+            for _, File in pairs(Files) do
+                if File:sub(-4) == ".txt" then
+                    local FileName = File:gsub(OrionLib.Folder .. "\\", "")
+                    FileName = FileName:gsub(".txt", "")
+                    if FileName ~= tostring(game.GameId) then -- Skip auto-save file
+                        table.insert(ConfigList, FileName)
+                    end
                 end
             end
-        end
+        end)
         return ConfigList
     end
     
+    -- Add label for instructions
+    Container:AddLabel("Enter a name and create or select an existing config")
+    
     -- Create config name input
-    local ConfigNameBox = Container:AddTextbox({
+    Container:AddTextbox({
         Name = "Config Name",
         Default = "",
         TextDisappear = false,
@@ -1830,18 +1840,18 @@ function OrionLib:AddConfigurationSystem(Parent)
         end
     })
     
-    -- Create config dropdown
+    -- Create config dropdown with stored configs
     local ConfigDropdown = Container:AddDropdown({
         Name = "Saved Configs",
         Default = "",
         Options = RefreshConfigs(),
+        Flag = "ConfigDropdown",
         Callback = function(Selected)
             SelectedConfig = Selected
-            ConfigNameBox:Set(Selected)
         end
     })
     
-    -- Create Save/Create button
+    -- Create Create Config button
     Container:AddButton({
         Name = "Create Config",
         Callback = function()
@@ -1889,24 +1899,14 @@ function OrionLib:AddConfigurationSystem(Parent)
                     end    
                 end
                 
-                if isfile(OrionLib.Folder .. "/" .. SelectedConfig .. ".txt") then
-                    -- Overwrite
-                    writefile(OrionLib.Folder .. "/" .. SelectedConfig .. ".txt", tostring(HttpService:JSONEncode(Data)))
-                    OrionLib:MakeNotification({
-                        Name = "Configuration",
-                        Content = "Overwritten configuration: " .. SelectedConfig,
-                        Time = 5
-                    })
-                else
-                    -- Create new
-                    writefile(OrionLib.Folder .. "/" .. SelectedConfig .. ".txt", tostring(HttpService:JSONEncode(Data)))
-                    OrionLib:MakeNotification({
-                        Name = "Configuration",
-                        Content = "Created configuration: " .. SelectedConfig,
-                        Time = 5
-                    })
-                    ConfigDropdown:Refresh(RefreshConfigs(), true)
-                end
+                -- Always overwrite - better UX
+                writefile(OrionLib.Folder .. "/" .. SelectedConfig .. ".txt", tostring(HttpService:JSONEncode(Data)))
+                OrionLib:MakeNotification({
+                    Name = "Configuration",
+                    Content = "Saved configuration: " .. SelectedConfig,
+                    Time = 5
+                })
+                ConfigDropdown:Refresh(RefreshConfigs(), true)
             else
                 OrionLib:MakeNotification({
                     Name = "Configuration",
@@ -1921,18 +1921,29 @@ function OrionLib:AddConfigurationSystem(Parent)
     Container:AddButton({
         Name = "Load Selected Config",
         Callback = function()
+            if SelectedConfig == "" then
+                OrionLib:MakeNotification({
+                    Name = "Configuration", 
+                    Content = "No config selected!",
+                    Time = 5
+                })
+                return
+            end
+            
             if isfile(OrionLib.Folder .. "/" .. SelectedConfig .. ".txt") then
                 local Success, Result = pcall(function()
                     return readfile(OrionLib.Folder .. "/" .. SelectedConfig .. ".txt")
                 end)
                 
                 if Success then
-                    LoadCfg(Result)
-                    OrionLib:MakeNotification({
-                        Name = "Configuration",
-                        Content = "Loaded configuration: " .. SelectedConfig,
-                        Time = 5
-                    })
+                    pcall(function()
+                        LoadCfg(Result)
+                        OrionLib:MakeNotification({
+                            Name = "Configuration",
+                            Content = "Loaded configuration: " .. SelectedConfig,
+                            Time = 5
+                        })
+                    end)
                 else
                     OrionLib:MakeNotification({
                         Name = "Configuration",
@@ -1950,8 +1961,45 @@ function OrionLib:AddConfigurationSystem(Parent)
         end
     })
     
+    -- Create two buttons side by side for Refresh and Delete
+    local SideBySideSection = Container:AddSection({Name = ""})
+    
+    -- Create Delete button
+    SideBySideSection:AddButton({
+        Name = "Delete Selected Config",
+        Callback = function()
+            if SelectedConfig == "" then
+                OrionLib:MakeNotification({
+                    Name = "Configuration",
+                    Content = "No config selected!",
+                    Time = 5
+                })
+                return
+            end
+            
+            if isfile(OrionLib.Folder .. "/" .. SelectedConfig .. ".txt") then
+                pcall(function()
+                    delfile(OrionLib.Folder .. "/" .. SelectedConfig .. ".txt")
+                end)
+                ConfigDropdown:Refresh(RefreshConfigs(), true)
+                OrionLib:MakeNotification({
+                    Name = "Configuration",
+                    Content = "Deleted configuration: " .. SelectedConfig,
+                    Time = 5
+                })
+                SelectedConfig = ""
+            else
+                OrionLib:MakeNotification({
+                    Name = "Configuration",
+                    Content = "Config doesn't exist!",
+                    Time = 5
+                })
+            end
+        end
+    })
+    
     -- Create Refresh button
-    Container:AddButton({
+    SideBySideSection:AddButton({
         Name = "Refresh Config List",
         Callback = function()
             ConfigDropdown:Refresh(RefreshConfigs(), true)
@@ -1960,30 +2008,6 @@ function OrionLib:AddConfigurationSystem(Parent)
                 Content = "Refreshed config list",
                 Time = 3
             })
-        end
-    })
-    
-    -- Create Delete button
-    Container:AddButton({
-        Name = "Delete Selected Config",
-        Callback = function()
-            if SelectedConfig ~= "" and isfile(OrionLib.Folder .. "/" .. SelectedConfig .. ".txt") then
-                delfile(OrionLib.Folder .. "/" .. SelectedConfig .. ".txt")
-                ConfigDropdown:Refresh(RefreshConfigs(), true)
-                OrionLib:MakeNotification({
-                    Name = "Configuration",
-                    Content = "Deleted configuration: " .. SelectedConfig,
-                    Time = 5
-                })
-                SelectedConfig = ""
-                ConfigNameBox:Set("")
-            else
-                OrionLib:MakeNotification({
-                    Name = "Configuration",
-                    Content = "Select a valid config to delete!",
-                    Time = 5
-                })
-            end
         end
     })
 end
