@@ -1794,22 +1794,21 @@ function OrionLib:Destroy()
 	Orion:Destroy()
 end
 function OrionLib:AddConfigurationSystem(Parent)
-    -- Get the appropriate container based on what type of parent was passed
     local Container
     
-    -- Check if Parent is a tab by testing if it has MakeTab method
-    if type(Parent) == "table" and Parent.AddSection then
-        -- It's a tab, so create a section
-        Container = Parent:AddSection({Name = "Configurations"})
+    if type(Parent) == "table" then
+        if Parent.AddSection then
+            Container = Parent:AddSection({Name = "Configurations"})
+        else
+            Container = Parent
+        end
     else
-        -- It's already a section or other container
-        Container = Parent
+        error("Invalid parent for configuration system")
+        return
     end
     
-    -- Create variables to store config state
     local SelectedConfig = ""
     
-    -- Function to refresh the configs list
     local function RefreshConfigs()
         local ConfigList = {}
         pcall(function()
@@ -1818,7 +1817,7 @@ function OrionLib:AddConfigurationSystem(Parent)
                 if File:sub(-4) == ".txt" then
                     local FileName = File:gsub(OrionLib.Folder .. "\\", "")
                     FileName = FileName:gsub(".txt", "")
-                    if FileName ~= tostring(game.GameId) then -- Skip auto-save file
+                    if FileName ~= tostring(game.GameId) then
                         table.insert(ConfigList, FileName)
                     end
                 end
@@ -1827,10 +1826,8 @@ function OrionLib:AddConfigurationSystem(Parent)
         return ConfigList
     end
     
-    -- Add label for instructions
     Container:AddLabel("Enter a name and create or select an existing config")
     
-    -- Create config name input
     Container:AddTextbox({
         Name = "Config Name",
         Default = "",
@@ -1840,7 +1837,6 @@ function OrionLib:AddConfigurationSystem(Parent)
         end
     })
     
-    -- Create config dropdown with stored configs
     local ConfigDropdown = Container:AddDropdown({
         Name = "Saved Configs",
         Default = "",
@@ -1851,7 +1847,6 @@ function OrionLib:AddConfigurationSystem(Parent)
         end
     })
     
-    -- Create Create Config button
     Container:AddButton({
         Name = "Create Config",
         Callback = function()
@@ -1883,7 +1878,6 @@ function OrionLib:AddConfigurationSystem(Parent)
         end
     })
     
-    -- Create Save/Overwrite button
     Container:AddButton({
         Name = "Save/Overwrite Config",
         Callback = function()
@@ -1899,7 +1893,6 @@ function OrionLib:AddConfigurationSystem(Parent)
                     end    
                 end
                 
-                -- Always overwrite - better UX
                 writefile(OrionLib.Folder .. "/" .. SelectedConfig .. ".txt", tostring(HttpService:JSONEncode(Data)))
                 OrionLib:MakeNotification({
                     Name = "Configuration",
@@ -1917,7 +1910,6 @@ function OrionLib:AddConfigurationSystem(Parent)
         end
     })
     
-    -- Create Load button
     Container:AddButton({
         Name = "Load Selected Config",
         Callback = function()
@@ -1961,11 +1953,7 @@ function OrionLib:AddConfigurationSystem(Parent)
         end
     })
     
-    -- Create two buttons side by side for Refresh and Delete
-    local SideBySideSection = Container:AddSection({Name = ""})
-    
-    -- Create Delete button
-    SideBySideSection:AddButton({
+    Container:AddButton({
         Name = "Delete Selected Config",
         Callback = function()
             if SelectedConfig == "" then
@@ -1998,8 +1986,7 @@ function OrionLib:AddConfigurationSystem(Parent)
         end
     })
     
-    -- Create Refresh button
-    SideBySideSection:AddButton({
+    Container:AddButton({
         Name = "Refresh Config List",
         Callback = function()
             ConfigDropdown:Refresh(RefreshConfigs(), true)
