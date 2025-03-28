@@ -1870,7 +1870,7 @@ end
 function Library:Destroy()
 	Container:Destroy()
 end
-function OrionLib:AddConfigurationSystem(Parent)
+function Library:AddConfigurationSystem(Parent)
     local Container
     if type(Parent) == "table" then
         if Parent.AddSection then
@@ -1886,10 +1886,10 @@ function OrionLib:AddConfigurationSystem(Parent)
     local function RefreshConfigs()
         local ConfigList = {}
         pcall(function()
-            local Files = listfiles(OrionLib.Folder)
+            local Files = listfiles(Library.Folder)
             for _, File in pairs(Files) do
                 if File:sub(-4) == ".txt" then
-                    local FileName = File:gsub(OrionLib.Folder .. "\\", "")
+                    local FileName = File:gsub(Library.Folder .. "\\", "")
                     FileName = FileName:gsub(".txt", "")
                     if FileName ~= tostring(game.GameId) then
                         table.insert(ConfigList, FileName)
@@ -1922,7 +1922,7 @@ function OrionLib:AddConfigurationSystem(Parent)
         Callback = function()
             if SelectedConfig ~= "" then
                 local Data = {}
-                for i, v in pairs(OrionLib.Flags) do
+                for i, v in pairs(Library.Flags) do
                     if v.Save then
                         if v.Type == "Colorpicker" then
                             Data[i] = PackColor(v.Value)
@@ -1931,15 +1931,15 @@ function OrionLib:AddConfigurationSystem(Parent)
                         end
                     end    
                 end
-                writefile(OrionLib.Folder .. "/" .. SelectedConfig .. ".txt", tostring(HttpService:JSONEncode(Data)))
-                OrionLib:MakeNotification({
+                writefile(Library.Folder .. "/" .. SelectedConfig .. ".txt", tostring(HttpService:JSONEncode(Data)))
+                Library:MakeNotification({
                     Name = "Configuration",
                     Content = "Created config: " .. SelectedConfig,
                     Time = 5
                 })
                 ConfigDropdown:Refresh(RefreshConfigs(), true)
             else
-                OrionLib:MakeNotification({
+                Library:MakeNotification({
                     Name = "Configuration",
                     Content = "Please enter a config name!",
                     Time = 5
@@ -1952,7 +1952,7 @@ function OrionLib:AddConfigurationSystem(Parent)
         Callback = function()
             if SelectedConfig ~= "" then
                 local Data = {}
-                for i, v in pairs(OrionLib.Flags) do
+                for i, v in pairs(Library.Flags) do
                     if v.Save then
                         if v.Type == "Colorpicker" then
                             Data[i] = PackColor(v.Value)
@@ -1961,15 +1961,15 @@ function OrionLib:AddConfigurationSystem(Parent)
                         end
                     end    
                 end
-                writefile(OrionLib.Folder .. "/" .. SelectedConfig .. ".txt", tostring(HttpService:JSONEncode(Data)))
-                OrionLib:MakeNotification({
+                writefile(Library.Folder .. "/" .. SelectedConfig .. ".txt", tostring(HttpService:JSONEncode(Data)))
+                Library:MakeNotification({
                     Name = "Configs",
                     Content = "Saved config: " .. SelectedConfig,
                     Time = 5
                 })
                 ConfigDropdown:Refresh(RefreshConfigs(), true)
             else
-                OrionLib:MakeNotification({
+                Library:MakeNotification({
                     Name = "Configs",
                     Content = "Please enter a config name!",
                     Time = 5
@@ -1981,35 +1981,35 @@ function OrionLib:AddConfigurationSystem(Parent)
         Name = "Load Selected Config",
         Callback = function()
             if SelectedConfig == "" then
-                OrionLib:MakeNotification({
+                Library:MakeNotification({
                     Name = "Configuration", 
                     Content = "No config selected!",
                     Time = 5
                 })
                 return
             end
-            if isfile(OrionLib.Folder .. "/" .. SelectedConfig .. ".txt") then
+            if isfile(Library.Folder .. "/" .. SelectedConfig .. ".txt") then
                 local Success, Result = pcall(function()
-                    return readfile(OrionLib.Folder .. "/" .. SelectedConfig .. ".txt")
+                    return readfile(Library.Folder .. "/" .. SelectedConfig .. ".txt")
                 end)
                 if Success then
                     pcall(function()
                         LoadCfg(Result)
-                        OrionLib:MakeNotification({
+                        Library:MakeNotification({
                             Name = "Configuration",
                             Content = "Loaded config: " .. SelectedConfig,
                             Time = 5
                         })
                     end)
                 else
-                    OrionLib:MakeNotification({
+                    Library:MakeNotification({
                         Name = "Configuration",
                         Content = "Failed to load config!",
                         Time = 5
                     })
                 end
             else
-                OrionLib:MakeNotification({
+                Library:MakeNotification({
                     Name = "Configuration",
                     Content = "Config doesn't exist!",
                     Time = 5
@@ -2021,26 +2021,26 @@ function OrionLib:AddConfigurationSystem(Parent)
         Name = "Delete Selected Config",
         Callback = function()
             if SelectedConfig == "" then
-                OrionLib:MakeNotification({
+                Library:MakeNotification({
                     Name = "Configuration",
                     Content = "No config selected!",
                     Time = 5
                 })
                 return
             end
-            if isfile(OrionLib.Folder .. "/" .. SelectedConfig .. ".txt") then
+            if isfile(Library.Folder .. "/" .. SelectedConfig .. ".txt") then
                 pcall(function()
-                    delfile(OrionLib.Folder .. "/" .. SelectedConfig .. ".txt")
+                    delfile(Library.Folder .. "/" .. SelectedConfig .. ".txt")
                 end)
                 ConfigDropdown:Refresh(RefreshConfigs(), true)
-                OrionLib:MakeNotification({
+                Library:MakeNotification({
                     Name = "Configuration",
                     Content = "Deleted config: " .. SelectedConfig,
                     Time = 5
                 })
                 SelectedConfig = ""
             else
-                OrionLib:MakeNotification({
+                Library:MakeNotification({
                     Name = "Configuration",
                     Content = "Config doesn't exist!",
                     Time = 5
@@ -2052,7 +2052,7 @@ function OrionLib:AddConfigurationSystem(Parent)
         Name = "Refresh Config List",
         Callback = function()
             ConfigDropdown:Refresh(RefreshConfigs(), true)
-            OrionLib:MakeNotification({
+            Library:MakeNotification({
                 Name = "Configuration",
                 Content = "Refreshed config list",
                 Time = 3
